@@ -35,10 +35,6 @@ PRODUCT_PACKAGES += \
 PRODUCT_PACKAGES += \
     NavigationBarMode2ButtonOverlay
 
-# Legal
-PRODUCT_SYSTEM_PROPERTIES += \
-    ro.crdroidlegal.url=https://crdroid.net/legal.php
-
 # Media
 PRODUCT_SYSTEM_DEFAULT_PROPERTIES += \
     media.recorder.show_manufacturer_and_model=true

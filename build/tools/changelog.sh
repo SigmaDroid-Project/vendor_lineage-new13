@@ -1,41 +1,30 @@
 #!/bin/bash
-#
-# Copyright (C) 2017-2024 crDroid Android Project
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
 
-Changelog=Changelog.txt
-
-DEVICE=$1
-
-# Lock file to ensure only one instance runs at a time
-LOCKFILE=/tmp/changelog_${DEVICE}_lock
-
-# Acquire the lock or exit if already running
-exec 9>"$LOCKFILE"
-if ! flock -n 9; then
-    echo "Changelog generation is already running."
-    exit 0
+# Exports
+DEVICE=$(echo $TARGET_PRODUCT | sed 's/sigma_//g')
+out=$OUT_DIR/target/product/$DEVICE
+if [ -f $out ]; # The path does not exist
+then
+	echo "The path to create changelog does not exist, exiting..."
+	exit
 fi
 
-# Remove old changelog if it exists
-[ -f "$Changelog" ] && rm -f "$Changelog"
+export Changelog=Changelog.txt
+
+if [ -f $Changelog ];
+then
+	rm -f $Changelog
+fi
+
+touch $Changelog
+
+# Print something to build output
+echo "Generating changelog..."
 
 # define changelog_days using 'export changelog_days=10'
 # this can be done before intiate build environment (. build/envsetup.sh)
 if [ -z $changelog_days ];then
-	changelog_days=10
+	changelog_days=14
 else
 	if (($changelog_days > 30 )); then
         echo "Changelog can not generated for more than 30 days. For how many days do you want to generate changelog again? (🕑 timeout 15 seconds - default to 10 days)"
@@ -43,7 +32,7 @@ else
 	fi
 fi
 
-REPO_LIST="$(cat .repo/project.list | sed '\?^vendor/crDroidOTA?d')"
+REPO_LIST="$(repo list --path | sed 's|^vendor/OTA$||')"
 for i in $(seq $changelog_days); do
     After_Date=`date --date="$i days ago" +%m-%d-%Y`
     k=$(expr $i - 1)
@@ -57,7 +46,7 @@ for i in $(seq $changelog_days); do
     # Cycle through all available repos
     for repo_path in $REPO_LIST; do
         # Find commits between 2 dates
-        GIT_LOG="$(git -C "$repo_path" log --oneline --after="$After_Date" --until="$Until_Date")"
+        GIT_LOG="$(git -C "$repo_path" log --oneline --after="$After_Date" --until="$Until_Date" --pretty=format:"%h - %s (by %an)" --date=format:"%Y-%m-%d")"
         [ -n "$GIT_LOG" ] && {
             printf '\n   * '; echo "$repo_path"
             echo "$GIT_LOG"
@@ -66,16 +55,8 @@ for i in $(seq $changelog_days); do
     echo >> $Changelog
 done
 
-if [ -f "$Changelog" ]; then
-    if cp "$Changelog" "$OUT_DIR/target/product/$DEVICE/system/etc/"; then
-        mv "$Changelog" "$OUT_DIR/target/product/$DEVICE/${DEVICE}_changelog.txt" || echo "Failed to move changelog file to $OUT_DIR/target/product/$DEVICE/${DEVICE}_changelog.txt"
-    else
-        echo "Failed to copy changelog file to $OUT_DIR/target/product/$DEVICE/system/etc/"
-    fi
-else
-    echo "Changelog file does not exist"
-fi
+sed -i 's/project/   */g' $Changelog
 
-# Release the lock
-flock -u 9
-rm -f $LOCKFILE
+cp $Changelog $OUT_DIR/target/product/$DEVICE/system/etc/$Changelog
+cp $Changelog $OUT_DIR/target/product/$DEVICE/system/etc/Changelog.txt
+cp $Changelog $OUT_DIR/target/product/$DEVICE/
