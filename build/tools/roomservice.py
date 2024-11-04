@@ -20,6 +20,9 @@ import json
 import netrc
 import os
 import sys
+import urllib.error
+import urllib.parse
+import urllib.request
 
 from xml.etree import ElementTree
 
@@ -38,15 +41,16 @@ except ImportError:
     urllib.parse = urlparse
     urllib.request = urllib2
 
-DEBUG = False
+DEBUG = True
 
 custom_local_manifest = ".repo/local_manifests/roomservice.xml"
-custom_default_revision =  "15.0"
-custom_dependencies = "crdroid.dependencies"
-org_manifest = "crdroidandroid"  # leave empty if org is provided in manifest
-org_display = "crDroid Android"  # needed for displaying
+custom_default_revision =  os.getenv('ROOMSERVICE_DEFAULT_BRANCH', 'sigma-14')
+custom_dependencies = "lineage.dependencies"
+org_manifest = "sigma-devices"  # leave empty if org is provided in manifest
+org_display = "sigmadroid-devices"  # needed for displaying
 
 github_auth = None
+
 
 local_manifests = '.repo/local_manifests'
 if not os.path.exists(local_manifests):
@@ -122,22 +126,27 @@ def add_to_manifest(repos, fallback_branch=None):
     for repo in repos:
         repo_name = repo['repository']
         repo_path = repo['target_path']
-        if 'branch' in repo:
-            repo_branch=repo['branch']
-        else:
-            repo_branch=custom_default_revision
         if 'remote' in repo:
             repo_remote=repo['remote']
         elif "/" not in repo_name:
             repo_remote=org_manifest
         elif "/" in repo_name:
             repo_remote="github"
+        # elif "aosp-" in repo_remote:
+        #     del project.attrib["revision"]
+        if 'branch' in repo:
+            repo_branch=repo['branch']
+        else:
+            repo_branch=custom_default_revision
 
         if is_in_manifest(repo_path):
             print('already exists: %s' % repo_path)
             continue
 
-        print('Adding dependency:\nRepository: %s\nBranch: %s\nRemote: %s\nPath: %s\n' % (repo_name, repo_branch,repo_remote, repo_path))
+        if repo_remote.startswith("aosp-"):
+            print('Adding dependency:\nRepository: %s\nBranch: Default\nRemote: %s\nPath: %s\n' % (repo_name, repo_remote, repo_path))
+        else:
+            print('Adding repository:\nRepository: %s\nBranch: %s\nRemote: %s\nPath: %s\n' % (repo_name, repo_remote, repo_path, repo_branch))
 
         project = ElementTree.Element(
             "project",
@@ -145,15 +154,33 @@ def add_to_manifest(repos, fallback_branch=None):
                     "remote": repo_remote,
                     "name": "%s" % repo_name}
         )
+        if repo_remote.startswith("aosp-"):
+          #  del project.attrib["remote"]
+            project.attrib["name"] = repo_name
+            project.attrib["remote"] = repo_remote
+            project.attrib["clone-depth"] = "1"
+        clone_depth = os.getenv('ROOMSERVICE_CLONE_DEPTH')
+        if clone_depth:
+            project.set('clone-depth', clone_depth)
 
-        if repo_branch is not None:
+        if repo_branch is not None and "aosp-" not in repo_remote:
             project.set('revision', repo_branch)
-        elif fallback_branch:
-            print("Using branch %s for %s" %
-                  (fallback_branch, repo_name))
-            project.set('revision', fallback_branch)
+        # elif fallback_branch:
+        #     print("Using branch %s for %s" %
+        #           (repo_branch, repo_name))
+          #  project.set('revision', fallback_branch)
         else:
-            print("Using default branch for %s" % repo_name)
+            print("Using default branch from %s for %s" %
+                   (repo_remote, repo_name))
+            # print("Using default branch for %s" % repo_name)
+        if 'clone-depth' in repo:
+            print("Setting clone-depth to %s for %s" % (repo['clone-depth'], repo_name))
+            project.set('clone-depth', repo['clone-depth'])
+            if repo_remote.startswith("aosp-"):
+                del project.attrib["remote"]
+                project.attrib["name"] = repo_name
+                project.attrib["remote"] = repo_remote
+                project.attrib["clone-depth"] = "1"
         lm.append(project)
 
     indent(lm)
@@ -239,8 +266,7 @@ def main():
     except IndexError:
         depsonly = False
 
-    if os.getenv('ROOMSERVICE_DEBUG'):
-        DEBUG = True
+    DEBUG = True
 
     product = sys.argv[1]
     device = product[product.find("_") + 1:] or product
@@ -255,11 +281,11 @@ def main():
         sys.exit()
 
     print("Device {0} not found. Attempting to retrieve device repository from "
-          "{1} Github (http://github.com/{2}).".format(device, org_display, org_manifest))
+          "{1} Github (http://github.com/{1}).".format(device, org_display))
 
     githubreq = urllib.request.Request(
         "https://api.github.com/search/repositories?"
-        "q={0}+user:{1}+in:name+fork:true".format(device, org_manifest))
+        "q={0}+user:{1}+in:name+fork:true".format(device, org_display))
     add_auth(githubreq)
 
     repositories = []
@@ -278,15 +304,15 @@ def main():
     for repository in repositories:
         repo_name = repository['name']
 
-        if not (repo_name.startswith("android_device_") and
+        if not (repo_name.startswith("device_") and
                 repo_name.endswith("_" + device)):
             continue
         print("Found repository: %s" % repository['name'])
 
         fallback_branch = detect_revision(repository)
-        manufacturer = repo_name.replace("android_device_", "").replace("_" + device, "")
+        manufacturer = repo_name[7:-(len(device)+1)]
         repo_path = "device/%s/%s" % (manufacturer, device)
-        adding = [{'repository': "crdroidandroid/" + repo_name, 'target_path': repo_path}]
+        adding = [{'repository': repo_name, 'target_path': repo_path}]
 
         add_to_manifest(adding, fallback_branch)
 
