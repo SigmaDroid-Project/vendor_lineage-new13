@@ -116,20 +116,31 @@ if [ -f $existingOTAjson ]; then
 }' >> $output
 
 else
-	version=$(awk '{ sub(/v/, ""); print }' <<< `echo "$3" | cut -d'-' -f2`)
 	buildprop=$2/system/build.prop
+	productprop=$2/product/etc/build.prop
+	linenr=`grep -m 1 -n "ro.sigma.maintainer" $buildprop | cut -d':' -f1`
+	maintainer=`sed -n $linenr'p' < $buildprop | cut -d'=' -f2`
+	linenr=`grep -m 1 -n "ro.product.product.manufacturer" $productprop | cut -d':' -f1`
+	oem=`sed -n $linenr'p' < $productprop | cut -d'=' -f2`
+	linenr=`grep -m 1 -n "ro.product.product.model" $productprop | cut -d':' -f1`
+	device=`sed -n $linenr'p' < $productprop | cut -d'=' -f2`
+	version=$(awk '{ sub(/v/, ""); print }' <<< `echo "$3" | cut -d'-' -f2`)
 	linenr=`grep -m 1 -n "ro.system.build.date.utc" $buildprop | cut -d':' -f1`
 	timestamp=`sed -n $linenr'p' < $buildprop | cut -d'=' -f2`
 	md5=`md5sum "$2/$3" | cut -d' ' -f1`
 	sha256=`sha256sum "$2/$3" | cut -d' ' -f1`
 	size=`stat -c "%s" "$2/$3"`
+	linenr=`grep -m 1 -n "ro.sigma.build.package" $buildprop | cut -d':' -f1`
+	buildtype=`sed -n $linenr'p' < $buildprop | cut -d'=' -f2`
+	paypal="https://paypal.me/albinoman887"
+	telegram="https://t.me/SigmaDroidROMChat"
 
 	echo '{
 	"response": [
 		{
-			"maintainer": "''",
-			"oem": "''",
-			"device": "''",
+			"maintainer": "'$maintainer'",
+			"oem": "'$oem'",
+			"device": "'$device'",
 			"filename": "'$3'",
 			"download": "https://sigmadroid.xyz/downloads/Home/'${1^}'/OTAs/'$3'",
 			"timestamp": '$timestamp',
@@ -137,15 +148,15 @@ else
 			"sha256": "'$sha256'",
 			"size": '$size',
 			"version": "'$version'",
-			"buildtype": "''",
+			"buildtype": "'$buildtype'",
 			"forum": "''",
 			"gapps": "''",
 			"firmware": "''",
 			"modem": "''",
 			"bootloader": "''",
 			"recovery": "''",
-			"paypal": "''",
-			"telegram": "''",
+			"paypal": "'$paypal'",
+			"telegram": "'$telegram'",
 			"dt": "''",
 			"common-dt": "''",
 			"kernel": "''"
@@ -154,7 +165,7 @@ else
 }' >> $output
 
 	echo 'There is no official support for this device yet'
-	echo 'Consider adding official support by reading the documentation at https://github.com/sigmardorid-devices/OTA/blob/sigma-15/README.md'
+	echo 'Consider adding official support by reading the documentation at https://github.com/sigmadroid-devices/OTA/blob/sigma-15/README.md'
 fi
 
 echo ""
