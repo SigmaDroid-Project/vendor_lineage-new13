@@ -1,5 +1,7 @@
-#!/usr/bin/env python
-# Copyright (C) 2023-2024 crDroid Android Project
+#!/usr/bin/env python3
+# Copyright (C) 2012-2013, The CyanogenMod Project
+# Copyright (C) 2012-2015, SlimRoms Project
+# Copyright (C) 2016-2017, AOSiP
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -44,7 +46,7 @@ except ImportError:
 DEBUG = True
 
 custom_local_manifest = ".repo/local_manifests/roomservice.xml"
-custom_default_revision =  os.getenv('ROOMSERVICE_DEFAULT_BRANCH', 'sigma-14')
+custom_default_revision =  os.getenv('ROOMSERVICE_DEFAULT_BRANCH', 'sigma-15')
 custom_dependencies = "lineage.dependencies"
 org_manifest = "sigma-devices"  # leave empty if org is provided in manifest
 org_display = "sigmadroid-devices"  # needed for displaying
