@@ -1,6 +1,7 @@
 # Allow vendor/extra to override any property by setting it first
 $(call inherit-product-if-exists, vendor/extra/product.mk)
 $(call inherit-product-if-exists, vendor/lineage/config/crdroid.mk)
+$(call inherit-product-if-exists, vendor/lineage/config/sigma.mk)
 $(call inherit-product-if-exists, vendor/addons/config.mk)
 $(call inherit-product-if-exists, vendor/certification/config.mk)
 $(call inherit-product-if-exists, vendor/pixel-framework/config.mk)
@@ -13,8 +14,6 @@ $(call inherit-product, vendor/pixel-style/config/common.mk)
 # Don't dexpreopt prebuilts. (For GMS).
 DONT_DEXPREOPT_PREBUILTS := true
 endif
-
-PRODUCT_BRAND ?= crDroidAndroid
 
 ifeq ($(PRODUCT_GMS_CLIENTID_BASE),)
 PRODUCT_SYSTEM_DEFAULT_PROPERTIES += \
@@ -94,10 +93,6 @@ PRODUCT_PACKAGES += \
 PRODUCT_COPY_FILES += \
     vendor/lineage/config/permissions/org.lineageos.android.xml:$(TARGET_COPY_OUT_PRODUCT)/etc/permissions/org.lineageos.android.xml
 
-# Enforce privapp-permissions whitelist
-PRODUCT_SYSTEM_DEFAULT_PROPERTIES += \
-    ro.control_privapp_permissions=log
-
 ifneq ($(TARGET_DISABLE_LINEAGE_SDK), true)
 # Lineage SDK
 include vendor/lineage/config/lineage_sdk_common.mk
@@ -143,11 +138,7 @@ PRODUCT_PACKAGES += \
 endif
 
 PRODUCT_PACKAGES += \
-    LineageSettingsProvider \
-    Updater
-
-PRODUCT_COPY_FILES += \
-    vendor/lineage/prebuilt/common/etc/init/init.lineage-updater.rc:$(TARGET_COPY_OUT_SYSTEM_EXT)/etc/init/init.lineage-updater.rc
+    LineageSettingsProvider
 
 # Config
 PRODUCT_PACKAGES += \
