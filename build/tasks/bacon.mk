@@ -14,18 +14,26 @@
 # limitations under the License.
 
 # -----------------------------------------------------------------
-# Lineage OTA update package
+# SIGMA OTA update package
 
-LINEAGE_TARGET_PACKAGE := $(PRODUCT_OUT)/$(LINEAGE_VERSION).zip
+SIGMA_TARGET_PACKAGE := $(PRODUCT_OUT)/$(LINEAGE_VERSION).zip
+SIGMA_TARGET_CHANGELOG := $(PRODUCT_OUT)/$(LINEAGE_VERSION)-Changelog.txt
+ECHO_BLUE := \e[34m
+ECHO_GREEN := \e[32m
+ECHO_ENDCOLOR := \e[0m
 
 SHA256 := prebuilts/build-tools/path/$(HOST_PREBUILT_TAG)/sha256sum
 
-$(LINEAGE_TARGET_PACKAGE): $(INTERNAL_OTA_PACKAGE_TARGET)
-	$(hide) mv -f $(INTERNAL_OTA_PACKAGE_TARGET) $(LINEAGE_TARGET_PACKAGE)
-	$(hide) $(SHA256) $(LINEAGE_TARGET_PACKAGE) | sed "s|$(PRODUCT_OUT)/||" > $(LINEAGE_TARGET_PACKAGE).sha256sum
-	$(hide) ./vendor/lineage/build/tools/createjson.sh $(TARGET_DEVICE) $(PRODUCT_OUT) $(LINEAGE_VERSION).zip
-	$(hide) rm -rf $(call intermediates-dir-for,PACKAGING,target_files)
-	@echo "Package Complete: $(LINEAGE_TARGET_PACKAGE)" >&2
-
 .PHONY: bacon
-bacon: $(LINEAGE_TARGET_PACKAGE) $(DEFAULT_GOAL)
+bacon: $(DEFAULT_GOAL) $(INTERNAL_OTA_PACKAGE_TARGET)
+	$(hide) mv -f $(INTERNAL_OTA_PACKAGE_TARGET) $(SIGMA_TARGET_PACKAGE)
+	$(hide) $(SHA256) $(SIGMA_TARGET_PACKAGE) | sed "s|$(PRODUCT_OUT)/||" > $(SIGMA_TARGET_PACKAGE).sha256sum
+	$(hide) ./vendor/lineage/build/tools/createjson.sh $(TARGET_DEVICE) $(PRODUCT_OUT) $(LINEAGE_VERSION).zip
+	$(hide) cp Changelog.txt $(SIGMA_TARGET_CHANGELOG)
+	$(hide) rm -rf $(call intermediates-dir-for,PACKAGING,target_files)
+	$(hide) ./vendor/lineage/tools/ascii_output.sh
+	@echo -e "$(ECHO_GREEN)===================================================================${ECHO_ENDCOLOR}"
+	@echo -e " ${ECHO_BLUE}OTA Package Complete:${ECHO_ENDCOLOR} $(SIGMA_TARGET_PACKAGE)"
+	@echo -e " ${ECHO_BLUE}OTA Changelog:${ECHO_ENDCOLOR} $(SIGMA_TARGET_CHANGELOG)"
+	@echo -e "${ECHO_GREEN}===================================================================${ECHO_ENDCOLOR}"
+	@echo ""
