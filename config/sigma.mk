@@ -22,6 +22,16 @@ PRODUCT_SYSTEM_PROPERTIES += \
 PRODUCT_COPY_FILES += \
     vendor/lineage/prebuilt/common/etc/sysconfig/preinstalled-packages-platform-sigma-product.xml:$(TARGET_COPY_OUT_PRODUCT)/etc/sysconfig/preinstalled-packages-platform-sigma-product.xml
 
+# Launcher3 as Default Launcher
+PRODUCT_SYSTEM_PROPERTIES += \
+    persist.sys.default_launcher=0 \
+    persist.sys.quickswitch_pixel_shipped=0
+
+ifeq ($(TARGET_INCLUDE_MATLOG),true)
+PRODUCT_PACKAGES += \
+    MatLog
+endif
+
 # Only include Updater for official builds
 ifeq ($(filter-out OFFICIAL Official official,$(SIGMA_BUILD_TYPE)),)
 PRODUCT_PACKAGES += \
@@ -37,7 +47,7 @@ PRODUCT_PRODUCT_PROPERTIES += \
     persist.columbus.use_ap_sensor=false
 endif
 
-ifeq ($(TARGET_INCLUDE_MATLOG),true)
+# RRO Packages
 PRODUCT_PACKAGES += \
-    MatLog
-endif
+    AndroidOverlay \
+    Launcher3Overlay
