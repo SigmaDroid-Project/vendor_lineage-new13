@@ -1,5 +1,11 @@
 PRODUCT_BRAND ?= SigmaDroid
 
+# GMS
+ifeq ($(WITH_GMS),true)
+$(call inherit-product, vendor/gms/products/board.mk)
+$(call inherit-product, vendor/gms/products/gms.mk)
+endif
+
 # Privapp-permissions whitelist mode
 PRODUCT_SYSTEM_DEFAULT_PROPERTIES += \
     ro.control_privapp_permissions=log
