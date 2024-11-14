@@ -51,3 +51,24 @@ endif
 PRODUCT_PACKAGES += \
     AndroidOverlay \
     Launcher3Overlay
+
+# PIHOOKS
+PRODUCT_SYSTEM_PROPERTIES += \
+    persist.sys.pihooks.first_api_level=32
+
+PRODUCT_PRODUCT_PROPERTIES += \
+    persist.sys.pihooks_mainline_BRAND?=google \
+    persist.sys.pihooks_mainline_DEVICE?=caiman \
+    persist.sys.pihooks_mainline_MANUFACTURER?=Google \
+    persist.sys.pihooks_mainline_PRODUCT?=caiman
+
+PRODUCT_BUILD_PROP_OVERRIDES += \
+    PihooksBuildFp="google/caiman/caiman:14/AD1A.240530.047.U1/12150698:user/release-keys" \
+    PihooksBuildModel="Pixel 9 Pro"
+
+PRODUCT_BUILD_PROP_OVERRIDES += \
+    PihooksGmsFp="google/tokay_beta/tokay:15/AP41.240823.009/12329489:user/release-keys" \
+    PihooksGmsModel="Pixel 9" \
+    PihooksGmsManufacturer="Google" \
+    PihooksGmsSecurityPatch="2023-09-05" \
+    PihooksGmsSdkVersion="21"
