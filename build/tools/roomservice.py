@@ -148,7 +148,7 @@ def add_to_manifest(repos, fallback_branch=None):
         if repo_remote.startswith("aosp-"):
             print('Adding dependency:\nRepository: %s\nBranch: Default\nRemote: %s\nPath: %s\n' % (repo_name, repo_remote, repo_path))
         else:
-            print('Adding repository:\nRepository: %s\nBranch: %s\nRemote: %s\nPath: %s\n' % (repo_name, repo_remote, repo_path, repo_branch))
+            print('Adding repository:\nRepository: %s\nBranch: %s\nRemote: %s\nPath: %s\n' % (repo_name, repo_branch, repo_remote, repo_path))
 
         project = ElementTree.Element(
             "project",
