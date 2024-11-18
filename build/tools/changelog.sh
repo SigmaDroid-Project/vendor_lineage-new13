@@ -11,15 +11,18 @@ fi
 
 export Changelog=Changelog.txt
 
-if [ -f $Changelog ];
-then
-	rm -f $Changelog
+# Lock file to ensure only one instance runs at a time
+LOCKFILE=/tmp/changelog_${DEVICE}_lock
+
+# Acquire the lock or exit if already running
+exec 9>"$LOCKFILE"
+if ! flock -n 9; then
+    echo "Changelog generation is already running."
+    exit 0
 fi
 
-touch $Changelog
-
-# Print something to build output
-echo "Generating changelog..."
+# Remove old changelog if it exists
+[ -f "$Changelog" ] && rm -f "$Changelog"
 
 # define changelog_days using 'export changelog_days=10'
 # this can be done before intiate build environment (. build/envsetup.sh)
@@ -32,7 +35,7 @@ else
 	fi
 fi
 
-REPO_LIST="$(repo list --path | sed 's|^vendor/OTA$||')"
+REPO_LIST="$(cat .repo/project.list | sed '\?^vendor/OTA?d')"
 for i in $(seq $changelog_days); do
     After_Date=`date --date="$i days ago" +%m-%d-%Y`
     k=$(expr $i - 1)
@@ -57,6 +60,14 @@ done
 
 sed -i 's/project/   */g' $Changelog
 
+# Print that we generated the changelog
+echo "Generated changelog"
+
 cp $Changelog $OUT_DIR/target/product/$DEVICE/system/etc/$Changelog
 cp $Changelog $OUT_DIR/target/product/$DEVICE/system/etc/Changelog.txt
+cp $Changelog $OUT_DIR/target/product/$DEVICE/${DEVICE}_changelog.txt
 cp $Changelog $OUT_DIR/target/product/$DEVICE/
+
+# Release the lock
+flock -u 9
+rm -f $LOCKFILE
